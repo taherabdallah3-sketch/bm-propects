@@ -339,9 +339,10 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: #ffffff; col
     <div>
       <div class="field-label">Number of results</div>
       <select class="field-select" id="resultCount">
-        <option value="6">6 companies</option>
-        <option value="10" selected>10 companies</option>
-        <option value="15">15 companies</option>
+        <option value="5">5 companies</option>
+        <option value="6" selected>6 companies</option>
+        <option value="8">8 companies</option>
+        <option value="10">10 companies</option>
       </select>
     </div>
 
@@ -464,51 +465,26 @@ async function runSearch() {
 
   const count = document.getElementById('resultCount').value;
   const notes = document.getElementById('extraNotes').value.trim();
-
   const sectorStr = CRITERIA.sector === 'any' ? 'any sector' : CRITERIA.sector;
   const locationStr = CRITERIA.location === 'any' ? 'anywhere in Egypt including industrial zones' : CRITERIA.location;
-  const productStr = CRITERIA.product === 'any' ? 'sale & leaseback, direct lease, or factoring' : CRITERIA.product;
+  const productStr = CRITERIA.product === 'any' ? 'SLB, DL, or FAC' : CRITERIA.product;
   const sizeStr = CRITERIA.size === 'any' ? 'any size' : CRITERIA.size;
+  const seed = Math.floor(Math.random() * 99999);
 
-  const prompt = `You are a senior business development specialist at BM Lease, the financial leasing and factoring arm of Banque Misr in Egypt.
+  const prompt = `BM Lease Egypt BD. Find ${count} Egyptian company leasing prospects. Random seed: ${seed}.
 
-Each search must return DIFFERENT companies from previous searches. Use a random seed approach — today's date+time is ${new Date().toISOString()} so vary your results accordingly.
+Focus on: industrial zone companies (10th Ramadan, Borg El Arab, Sadat City, 6th October, Obour), mid-market manufacturers, food producers, logistics, printing, packaging, construction materials. NOT famous or listed companies.
+Sector: ${sectorStr}. Location: ${locationStr}. Product: ${productStr}. Size: ${sizeStr}.${notes ? ' Notes: '+notes : ''}
 
-Your job is to identify REAL Egyptian companies that would be good prospects for leasing or factoring deals. Focus on:
-- Companies in industrial zones (10th of Ramadan, Borg El Arab, Sadat City, 6th of October, Obour)
-- Mid-market companies that OWN real assets (factories, equipment, warehouses, machinery, vehicles)
-- Companies that are NOT cash-rich enough to get cheap bank MTL financing
-- Companies that banks ignore because they're not large enough
-- Small to mid-sized manufacturers, food producers, logistics companies, printers, packagers, construction material companies
+SLB=company owns assets wants capital. DL=needs new equipment. FAC=has receivables needs cash.
 
-AVOID: Famous large companies, publicly listed multinationals, cash-rich corporates that get cheap bank rates.
-AVOID REPEATING: Delta Plastics, Sadat Ceramic, Al Ahram Beverages, Juhayna, or any company you commonly suggest.
+Respond ONLY with JSON array, no markdown. Keep each field under 15 words:
+[{"name":"Co","nameAr":"","sector":"s","location":"City Zone","size":"SME","employees":"100","productType":"SLB","fitScore":80,"priority":"high","assetProfile":"owns factory","whyProspect":"asset rich cash tight","productReasoning":"unlock capital via SLB","approachStrategy":"call CFO directly","contactName":"Name - Title","contactPhone":"+20 10 0000 0000","contactEmail":"a@b.com"}]`;
 
-VARY YOUR RESULTS by rotating through different:
-- Sub-sectors: cold storage, flour mills, animal feed, cables & wires, furniture, chemicals, rubber, glass, paper, plastics, metal fabrication, auto parts, garments, ceramics, paints
-- Zones: mix between 10th of Ramadan, Borg El Arab, Sadat City, Obour, 6th of October, and lesser-known areas
-- Company profiles: family-owned factories, regional distributors, growing exporters, companies that recently invested in new machinery
-
-Search criteria:
-- Sector: ${sectorStr}
-- Location: ${locationStr}  
-- Product fit: ${productStr}
-- Company size: ${sizeStr}
-${notes ? `- Additional requirements: ${notes}` : ''}
-
-Product definitions:
-- SALE & LEASEBACK (SLB): Company already OWNS significant assets (factory, land, equipment) and needs to unlock capital by selling to BM Lease and leasing back. Best for companies that are asset-rich but cash-tight.
-- DIRECT LEASE (DL): Company needs NEW equipment or machinery but prefers not to buy. Good for growing companies expanding capacity.
-- FACTORING (FAC): Company has outstanding receivables from clients and needs to unlock that cash. Good for companies with long payment cycles.
-
-Generate exactly ${count} realistic Egyptian company prospects. These should be plausible real companies or representative of real companies in these industrial areas. Include specific details that make them feel real and actionable.
-
-IMPORTANT: Keep all text values SHORT (max 20 words each) to avoid truncation.
-Respond ONLY with valid JSON array, no markdown, no explanation:
-[{"name":"Company name","nameAr":"","sector":"Sector","location":"City, Zone","size":"SME or Mid-market","employees":"50-200","productType":"SLB or DL or FAC","fitScore":75,"priority":"high or medium or low","assetProfile":"Short asset description max 15 words","whyProspect":"Why prospect max 20 words","productReasoning":"Why this product max 15 words","approachStrategy":"How to approach max 15 words","contactName":"Name - Title","contactPhone":"+20 10 1234 5678","contactEmail":"name@company.com"}]`;
-
-  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const res = await fetch('https://api.anthropic.com/v1/messages', {
+      signal: controller.signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -518,11 +494,12 @@ Respond ONLY with valid JSON array, no markdown, no explanation:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 6000,
+        max_tokens: 3000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
+    clearTimeout(timeout);
     if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
     const data = await res.json();
     const text = data.content.map(i => i.text || '').join('');
