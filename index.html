@@ -543,18 +543,16 @@ async function runSourcing() {
     '[{"name":"Company name","nameAr":"Arabic or empty","sector":"sub-sector","location":"City and zone","size":"SME or Mid-market","employees":"headcount","productType":"SLB or DL or FAC","fitScore":85,"priority":"high or medium or low","assetProfile":"What they own, 2 sentences","whyProspect":"Why leasing prospect, 2-3 sentences","productReasoning":"Why this product fits, 2 sentences","approachStrategy":"How to approach, 2 sentences","contactName":"Name and title","contactPhone":"+20 1X XXXX XXXX","contactEmail":"name@company.com"}]';
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://bm-propects.taherabdallah3.workers.dev', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': getApiKey(),
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 8000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+
         messages: [{ role: 'user', content: prompt }]
       })
     });
