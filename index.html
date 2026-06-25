@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BM Lease — Prospect Finder</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e8e8e8; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar { padding: 0 2rem; height: 54px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e2028; background: #0f1117; position: sticky; top: 0; z-index: 10; }
+.logo { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: 0.3px; }
+.logo span { color: #4e8fff; }
+.key-btn { font-size: 12px; color: #666; border: 1px solid #1e2028; border-radius: 6px; padding: 5px 12px; background: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.key-btn:hover { border-color: #4e8fff; color: #4e8fff; }
+.key-dot { width: 7px; height: 7px; border-radius: 50%; background: #333; }
+.key-dot.on { background: #22c55e; }
+
+/* LAYOUT */
+.layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 54px); }
+
+/* SIDEBAR */
+.sidebar { border-right: 1px solid #1e2028; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; background: #0c0e14; }
+.sidebar-title { font-size: 11px; font-weight: 600; color: #444; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 12px; color: #666; }
+.field-input, .field-select, .field-textarea { background: #13151e; border: 1px solid #1e2028; border-radius: 8px; color: #e8e8e8; font-size: 13px; font-family: inherit; padding: 9px 12px; width: 100%; transition: border-color 0.15s; }
+.field-input:focus, .field-select:focus, .field-textarea:focus { outline: none; border-color: #4e8fff; }
+.field-textarea { resize: vertical; min-height: 80px; }
+.field-select option { background: #13151e; }
+.tags-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid #1e2028; color: #666; cursor: pointer; background: none; transition: all 0.15s; white-space: nowrap; }
+.tag:hover { border-color: #4e8fff; color: #4e8fff; }
+.tag.active { border-color: #4e8fff; color: #4e8fff; background: #4e8fff15; }
+.search-btn { background: #4e8fff; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: auto; }
+.search-btn:hover { background: #3d7aff; }
+.search-btn:disabled { background: #2a3a55; color: #4e8fff; cursor: not-allowed; }
+.divider { height: 1px; background: #1e2028; }
+
+/* MAIN */
+.main { padding: 1.5rem 2rem; overflow-y: auto; }
+.main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.main-title { font-size: 18px; font-weight: 600; color: #fff; }
+.main-sub { font-size: 13px; color: #555; margin-top: 3px; }
+.results-meta { font-size: 12px; color: #555; display: flex; align-items: center; gap: 12px; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.fpill { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1px solid #1e2028; background: none; color: #555; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.fpill:hover { border-color: #4e8fff; color: #4e8fff; }
+.fpill.active { background: #4e8fff; border-color: #4e8fff; color: #fff; }
+
+/* PROSPECT CARDS */
+.prospects { display: flex; flex-direction: column; gap: 10px; }
+.pcard { background: #13151e; border: 1px solid #1e2028; border-radius: 12px; padding: 16px 18px; transition: border-color 0.15s; }
+.pcard:hover { border-color: #2a3a55; }
+.pcard.priority-high { border-left: 3px solid #4e8fff; }
+.pcard.priority-medium { border-left: 3px solid #f59e0b; }
+.pcard-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.pcard-name { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+.pcard-meta { font-size: 12px; color: #555; display: flex; gap: 10px; flex-wrap: wrap; }
+.pcard-meta span { display: flex; align-items: center; gap: 4px; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.badge-slb { background: #0a2a1e; color: #22c55e; border: 1px solid #14532d; }
+.badge-dl { background: #0d1f3a; color: #4e8fff; border: 1px solid #1e3a5f; }
+.badge-fac { background: #1e0a2a; color: #a855f7; border: 1px solid #3b0764; }
+.badge-high { background: #0d1f3a; color: #4e8fff; border: 1px solid #1e3a5f; }
+.badge-medium { background: #1e1200; color: #f59e0b; border: 1px solid #451a03; }
+.fit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.fit-label { font-size: 11px; color: #444; }
+.fit-bar { width: 100px; height: 3px; background: #1e2028; border-radius: 2px; overflow: hidden; }
+.fit-fill { height: 100%; border-radius: 2px; background: #4e8fff; }
+.fit-score { font-size: 12px; font-weight: 600; color: #4e8fff; }
+.info-label { font-size: 10px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.info-text { font-size: 13px; color: #999; line-height: 1.6; margin-bottom: 10px; }
+.expand-btn { font-size: 12px; color: #4e8fff; background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+.product-reason { font-size: 13px; color: #888; line-height: 1.6; background: #0c0e14; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; display: none; border: 1px solid #1e2028; }
+.product-reason.visible { display: block; }
+.contact-row { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid #1e2028; }
+.contact-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
+.save-btn { margin-left: auto; font-size: 11px; color: #555; border: 1px solid #1e2028; border-radius: 6px; padding: 4px 10px; background: none; cursor: pointer; transition: all 0.15s; }
+.save-btn:hover { border-color: #22c55e; color: #22c55e; }
+.save-btn.saved { border-color: #22c55e; color: #22c55e; background: #0a2a1e; }
+
+/* EMPTY / LOADING */
+.empty-state { text-align: center; padding: 5rem 2rem; color: #333; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.3; }
+.empty-text { font-size: 14px; }
+.loading-state { text-align: center; padding: 5rem 2rem; }
+.spinner { width: 32px; height: 32px; border: 2px solid #1e2028; border-top-color: #4e8fff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 13px; color: #555; }
+.loading-sub { font-size: 12px; color: #333; margin-top: 6px; }
+
+/* KEY MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: #13151e; border: 1px solid #1e2028; border-radius: 14px; padding: 24px; width: 100%; max-width: 420px; }
+.modal h3 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: #666; margin-bottom: 16px; }
+.modal-input { width: 100%; background: #0c0e14; border: 1px solid #1e2028; border-radius: 8px; color: #e8e8e8; font-size: 13px; font-family: monospace; padding: 10px 12px; }
+.modal-input:focus { outline: none; border-color: #4e8fff; }
+.modal-footer { display: flex; gap: 8px; margin-top: 14px; }
+.modal-cancel { flex: 1; padding: 9px; border: 1px solid #1e2028; border-radius: 8px; background: none; color: #666; font-size: 13px; cursor: pointer; }
+.modal-save { flex: 1; padding: 9px; background: #4e8fff; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid #1e2028; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">BM <span>Lease</span> — Prospect Finder</div>
+  <button class="key-btn" onclick="openKeyModal()">
+    <div class="key-dot" id="keyDot"></div>
+    API Key
+  </button>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div>
+      <div class="sidebar-title">Search criteria</div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Sector / Industry</div>
+      <div class="tags-row" id="sectorTags">
+        <button class="tag active" data-val="any" onclick="toggleTag(this,'sector')">Any</button>
+        <button class="tag" data-val="Manufacturing" onclick="toggleTag(this,'sector')">Manufacturing</button>
+        <button class="tag" data-val="Food & Beverage" onclick="toggleTag(this,'sector')">Food & Beverage</button>
+        <button class="tag" data-val="Logistics & Warehousing" onclick="toggleTag(this,'sector')">Logistics</button>
+        <button class="tag" data-val="Printing & Packaging" onclick="toggleTag(this,'sector')">Printing</button>
+        <button class="tag" data-val="Construction & Building Materials" onclick="toggleTag(this,'sector')">Construction</button>
+        <button class="tag" data-val="Retail" onclick="toggleTag(this,'sector')">Retail</button>
+        <button class="tag" data-val="Healthcare & Pharmaceuticals" onclick="toggleTag(this,'sector')">Healthcare</button>
+        <button class="tag" data-val="Hospitality" onclick="toggleTag(this,'sector')">Hospitality</button>
+        <button class="tag" data-val="Agriculture" onclick="toggleTag(this,'sector')">Agriculture</button>
+        <button class="tag" data-val="Textile & Garments" onclick="toggleTag(this,'sector')">Textile</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-group">
+      <div class="field-label">Location</div>
+      <div class="tags-row" id="locationTags">
+        <button class="tag active" data-val="any" onclick="toggleTag(this,'location')">Nationwide</button>
+        <button class="tag" data-val="10th of Ramadan industrial zone" onclick="toggleTag(this,'location')">10th of Ramadan</button>
+        <button class="tag" data-val="6th of October industrial zone" onclick="toggleTag(this,'location')">6th of October</button>
+        <button class="tag" data-val="Borg El Arab industrial zone Alexandria" onclick="toggleTag(this,'location')">Borg El Arab</button>
+        <button class="tag" data-val="Sadat City industrial zone" onclick="toggleTag(this,'location')">Sadat City</button>
+        <button class="tag" data-val="Obour City industrial zone" onclick="toggleTag(this,'location')">Obour City</button>
+        <button class="tag" data-val="Greater Cairo" onclick="toggleTag(this,'location')">Greater Cairo</button>
+        <button class="tag" data-val="Delta region Egypt" onclick="toggleTag(this,'location')">Delta</button>
+        <button class="tag" data-val="Upper Egypt" onclick="toggleTag(this,'location')">Upper Egypt</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-group">
+      <div class="field-label">Product fit</div>
+      <div class="tags-row" id="productTags">
+        <button class="tag active" data-val="any" onclick="toggleTag(this,'product')">Both</button>
+        <button class="tag" data-val="Sale & Leaseback" onclick="toggleTag(this,'product')">Sale & leaseback</button>
+        <button class="tag" data-val="Direct Lease" onclick="toggleTag(this,'product')">Direct lease</button>
+        <button class="tag" data-val="Factoring" onclick="toggleTag(this,'product')">Factoring</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-group">
+      <div class="field-label">Company size</div>
+      <div class="tags-row" id="sizeTags">
+        <button class="tag active" data-val="any" onclick="toggleTag(this,'size')">Any</button>
+        <button class="tag" data-val="small to medium" onclick="toggleTag(this,'size')">SME</button>
+        <button class="tag" data-val="mid-market" onclick="toggleTag(this,'size')">Mid-market</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-group">
+      <div class="field-label">Number of results</div>
+      <select class="field-select" id="resultCount">
+        <option value="6">6 companies</option>
+        <option value="10" selected>10 companies</option>
+        <option value="15">15 companies</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Additional notes (optional)</div>
+      <textarea class="field-textarea" id="extraNotes" placeholder="e.g. Focus on companies that recently expanded, own warehouses, or have heavy equipment..."></textarea>
+    </div>
+
+    <button class="search-btn" id="searchBtn" onclick="runSearch()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Find prospects
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="main-header">
+      <div>
+        <div class="main-title">Prospect results</div>
+        <div class="main-sub" id="mainSub">Set your criteria and click Find prospects</div>
+      </div>
+      <div class="results-meta" id="resultsMeta"></div>
+    </div>
+
+    <div class="filter-bar" id="filterBar" style="display:none;">
+      <button class="fpill active" onclick="filterResults('all',this)">All</button>
+      <button class="fpill" onclick="filterResults('SLB',this)">Sale & leaseback</button>
+      <button class="fpill" onclick="filterResults('DL',this)">Direct lease</button>
+      <button class="fpill" onclick="filterResults('FAC',this)">Factoring</button>
+      <button class="fpill" onclick="filterResults('high',this)">High priority</button>
+    </div>
+
+    <div id="prospectContainer">
+      <div class="empty-state">
+        <div class="empty-icon">🏭</div>
+        <div class="empty-text">Your prospects will appear here.<br>Select your criteria and search.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KEY MODAL -->
+<div class="modal-overlay" id="keyModal" onclick="if(event.target===this)closeKeyModal()">
+  <div class="modal">
+    <h3>Anthropic API key</h3>
+    <p>Required to power the AI search. Saved locally in your browser.</p>
+    <input class="modal-input" id="keyInput" type="password" placeholder="sk-ant-api03-...">
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeKeyModal()">Cancel</button>
+      <button class="modal-save" onclick="saveKey()">Save key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CRITERIA = { sector: 'any', location: 'any', product: 'any', size: 'any' };
+let allProspects = [], activeFilter = 'all';
+let savedIds = JSON.parse(localStorage.getItem('bmlease_saved_prospects') || '[]');
+
+function getKey() { return localStorage.getItem('bmlease_api_key') || ''; }
+function saveKey() {
+  const k = document.getElementById('keyInput').value.trim();
+  if (!k) return;
+  localStorage.setItem('bmlease_api_key', k);
+  document.getElementById('keyDot').classList.add('on');
+  closeKeyModal();
+}
+function openKeyModal() {
+  const saved = getKey();
+  if (saved) document.getElementById('keyInput').value = saved;
+  document.getElementById('keyModal').classList.add('open');
+}
+function closeKeyModal() { document.getElementById('keyModal').classList.remove('open'); }
+
+window.addEventListener('load', () => {
+  if (getKey()) document.getElementById('keyDot').classList.add('on');
+});
+
+function toggleTag(btn, group) {
+  const container = document.getElementById(group + 'Tags');
+  if (btn.dataset.val === 'any') {
+    container.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    CRITERIA[group] = 'any';
+  } else {
+    container.querySelector('[data-val="any"]').classList.remove('active');
+    btn.classList.toggle('active');
+    const active = [...container.querySelectorAll('.tag.active')].map(t => t.dataset.val);
+    if (!active.length) {
+      container.querySelector('[data-val="any"]').classList.add('active');
+      CRITERIA[group] = 'any';
+    } else {
+      CRITERIA[group] = active.join(', ');
+    }
+  }
+}
+
+async function runSearch() {
+  const key = getKey();
+  if (!key) { openKeyModal(); return; }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.8s linear infinite"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8"/></svg> Searching...';
+  document.getElementById('filterBar').style.display = 'none';
+  document.getElementById('resultsMeta').innerHTML = '';
+
+  document.getElementById('prospectContainer').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text">Researching Egyptian companies...</div>
+      <div class="loading-sub">Finding real prospects in ${CRITERIA.location === 'any' ? 'Egypt' : CRITERIA.location}</div>
+    </div>`;
+
+  const count = document.getElementById('resultCount').value;
+  const notes = document.getElementById('extraNotes').value.trim();
+
+  const sectorStr = CRITERIA.sector === 'any' ? 'any sector' : CRITERIA.sector;
+  const locationStr = CRITERIA.location === 'any' ? 'anywhere in Egypt including industrial zones' : CRITERIA.location;
+  const productStr = CRITERIA.product === 'any' ? 'sale & leaseback, direct lease, or factoring' : CRITERIA.product;
+  const sizeStr = CRITERIA.size === 'any' ? 'any size' : CRITERIA.size;
+
+  const prompt = `You are a senior business development specialist at BM Lease, the financial leasing and factoring arm of Banque Misr in Egypt.
+
+Each search must return DIFFERENT companies from previous searches. Use a random seed approach — today's date+time is ${new Date().toISOString()} so vary your results accordingly.
+
+Your job is to identify REAL Egyptian companies that would be good prospects for leasing or factoring deals. Focus on:
+- Companies in industrial zones (10th of Ramadan, Borg El Arab, Sadat City, 6th of October, Obour)
+- Mid-market companies that OWN real assets (factories, equipment, warehouses, machinery, vehicles)
+- Companies that are NOT cash-rich enough to get cheap bank MTL financing
+- Companies that banks ignore because they're not large enough
+- Small to mid-sized manufacturers, food producers, logistics companies, printers, packagers, construction material companies
+
+AVOID: Famous large companies, publicly listed multinationals, cash-rich corporates that get cheap bank rates.
+AVOID REPEATING: Delta Plastics, Sadat Ceramic, Al Ahram Beverages, Juhayna, or any company you commonly suggest.
+
+VARY YOUR RESULTS by rotating through different:
+- Sub-sectors: cold storage, flour mills, animal feed, cables & wires, furniture, chemicals, rubber, glass, paper, plastics, metal fabrication, auto parts, garments, ceramics, paints
+- Zones: mix between 10th of Ramadan, Borg El Arab, Sadat City, Obour, 6th of October, and lesser-known areas
+- Company profiles: family-owned factories, regional distributors, growing exporters, companies that recently invested in new machinery
+
+Search criteria:
+- Sector: ${sectorStr}
+- Location: ${locationStr}  
+- Product fit: ${productStr}
+- Company size: ${sizeStr}
+${notes ? `- Additional requirements: ${notes}` : ''}
+
+Product definitions:
+- SALE & LEASEBACK (SLB): Company already OWNS significant assets (factory, land, equipment) and needs to unlock capital by selling to BM Lease and leasing back. Best for companies that are asset-rich but cash-tight.
+- DIRECT LEASE (DL): Company needs NEW equipment or machinery but prefers not to buy. Good for growing companies expanding capacity.
+- FACTORING (FAC): Company has outstanding receivables from clients and needs to unlock that cash. Good for companies with long payment cycles.
+
+Generate exactly ${count} realistic Egyptian company prospects. These should be plausible real companies or representative of real companies in these industrial areas. Include specific details that make them feel real and actionable.
+
+IMPORTANT: Keep all text values SHORT (max 20 words each) to avoid truncation.
+Respond ONLY with valid JSON array, no markdown, no explanation:
+[{"name":"Company name","nameAr":"","sector":"Sector","location":"City, Zone","size":"SME or Mid-market","employees":"50-200","productType":"SLB or DL or FAC","fitScore":75,"priority":"high or medium or low","assetProfile":"Short asset description max 15 words","whyProspect":"Why prospect max 20 words","productReasoning":"Why this product max 15 words","approachStrategy":"How to approach max 15 words","contactName":"Name - Title","contactPhone":"+20 10 1234 5678","contactEmail":"name@company.com"}]`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 6000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    allProspects = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+    const slb = allProspects.filter(p => p.productType === 'SLB').length;
+    const dl = allProspects.filter(p => p.productType === 'DL').length;
+    const fac = allProspects.filter(p => p.productType === 'FAC').length;
+    const high = allProspects.filter(p => p.priority === 'high').length;
+
+    document.getElementById('mainSub').textContent = `${allProspects.length} prospects found · ${sectorStr} · ${locationStr}`;
+    document.getElementById('resultsMeta').innerHTML = `
+      <span style="color:#22c55e;">${slb} SLB</span>
+      <span style="color:#4e8fff;">${dl} DL</span>
+      <span style="color:#a855f7;">${fac} FAC</span>
+      <span style="color:#f59e0b;">${high} high priority</span>`;
+    document.getElementById('filterBar').style.display = 'flex';
+    renderProspects(allProspects);
+
+  } catch (err) {
+    document.getElementById('prospectContainer').innerHTML = `<div class="empty-state"><div class="empty-text" style="color:#dc2626;">⚠️ ${err.message}</div></div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Find prospects';
+}
+
+function filterResults(filter, btn) {
+  activeFilter = filter;
+  document.querySelectorAll('.fpill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  let filtered = allProspects;
+  if (filter === 'high') filtered = allProspects.filter(p => p.priority === 'high');
+  else if (filter !== 'all') filtered = allProspects.filter(p => p.productType === filter);
+  renderProspects(filtered);
+}
+
+function renderProspects(prospects) {
+  if (!prospects.length) {
+    document.getElementById('prospectContainer').innerHTML = '<div class="empty-state"><div class="empty-text">No prospects match this filter.</div></div>';
+    return;
+  }
+  const sorted = [...prospects].sort((a, b) => b.fitScore - a.fitScore);
+  document.getElementById('prospectContainer').innerHTML = `
+    <div class="prospects">
+      ${sorted.map((p, i) => `
+        <div class="pcard priority-${p.priority}" id="pcard-${i}">
+          <div class="pcard-top">
+            <div>
+              <div class="pcard-name">${p.name}${p.nameAr ? ' <span style="color:#555;font-size:13px;">· '+p.nameAr+'</span>' : ''}</div>
+              <div class="pcard-meta">
+                <span>📍 ${p.location}</span>
+                <span>🏭 ${p.sector}</span>
+                <span>👥 ${p.employees || p.size}</span>
+              </div>
+            </div>
+            <div class="badges">
+              <span class="badge ${p.productType==='SLB'?'badge-slb':p.productType==='DL'?'badge-dl':'badge-fac'}">${p.productType==='SLB'?'Sale & leaseback':p.productType==='DL'?'Direct lease':'Factoring'}</span>
+              <span class="badge ${p.priority==='high'?'badge-high':'badge-medium'}">${p.priority==='high'?'High priority':'Medium'}</span>
+            </div>
+          </div>
+
+          <div class="fit-row">
+            <span class="fit-label">Fit score</span>
+            <div class="fit-bar"><div class="fit-fill" style="width:${p.fitScore}%"></div></div>
+            <span class="fit-score">${p.fitScore}%</span>
+          </div>
+
+          <div class="info-label">Asset profile</div>
+          <div class="info-text">${p.assetProfile}</div>
+
+          <div class="info-label">Why a prospect</div>
+          <div class="info-text">${p.whyProspect}</div>
+
+          <button class="expand-btn" id="ebtn-${i}" onclick="toggleExpand(${i})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="earrow-${i}"><path d="M6 9l6 6 6-6"/></svg>
+            Why ${p.productType} + how to approach
+          </button>
+          <div class="product-reason" id="ereason-${i}">
+            <strong style="color:#e8e8e8;display:block;margin-bottom:6px;">Product fit</strong>
+            ${p.productReasoning}
+            <strong style="color:#e8e8e8;display:block;margin:10px 0 6px;">How to approach</strong>
+            ${p.approachStrategy}
+          </div>
+
+          <div class="contact-row">
+            <div class="contact-item">👤 ${p.contactName}</div>
+            <div class="contact-item">📞 ${p.contactPhone}</div>
+            <div class="contact-item">✉️ ${p.contactEmail}</div>
+            <button class="save-btn ${savedIds.includes(p.name)?'saved':''}" id="sbtn-${i}" onclick="toggleSave(${i},'${p.name.replace(/'/g,"\\'")}')">
+              ${savedIds.includes(p.name) ? '✓ Saved' : '+ Save'}
+            </button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function toggleExpand(i) {
+  const reason = document.getElementById('ereason-' + i);
+  const arrow = document.getElementById('earrow-' + i);
+  const visible = reason.classList.contains('visible');
+  reason.classList.toggle('visible', !visible);
+  arrow.style.transform = visible ? '' : 'rotate(180deg)';
+}
+
+function toggleSave(i, name) {
+  const btn = document.getElementById('sbtn-' + i);
+  if (savedIds.includes(name)) {
+    savedIds = savedIds.filter(n => n !== name);
+    btn.textContent = '+ Save';
+    btn.classList.remove('saved');
+  } else {
+    savedIds.push(name);
+    btn.textContent = '✓ Saved';
+    btn.classList.add('saved');
+  }
+  localStorage.setItem('bmlease_saved_prospects', JSON.stringify(savedIds));
+}
+</script>
+</body>
+</html>
