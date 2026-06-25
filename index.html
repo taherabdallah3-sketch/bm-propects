@@ -386,7 +386,7 @@ function saveApiKey(val) {
 }
 
 function getApiKey() {
-  return localStorage.getItem('bm_prospector_key') || '';
+  return localStorage.getItem('bm_prospector_key') || ANTHROPIC_API_KEY;
 }
 
 // Load saved key on startup
@@ -398,7 +398,7 @@ window.addEventListener('load', function() {
   }
 });
 
-const ANTHROPIC_API_KEY = localStorage.getItem('bm_prospector_key') || '';
+const ANTHROPIC_API_KEY = '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';
 
 const CRITERIA = { sector: 'any', location: 'any', product: 'any', size: 'any' };
 let allProspects = [];
