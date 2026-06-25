@@ -28,14 +28,14 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--charcoal); color: var(--text-primary); min-height: 100vh; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: #ffffff; color: #1c1c1e; min-height: 100vh; }
 
 /* TOPBAR */
 .topbar {
   height: 60px; padding: 0 2rem;
   display: flex; align-items: center; justify-content: space-between;
-  background: var(--charcoal);
-  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5ea;
   position: sticky; top: 0; z-index: 50;
   backdrop-filter: blur(20px);
 }
@@ -54,12 +54,12 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--charco
 .key-dot.on { background: var(--success); box-shadow: 0 0 6px var(--success); }
 
 /* LAYOUT */
-.layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 60px); }
+.layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 60px); background: #ffffff; }
 
 /* SIDEBAR */
 .sidebar {
-  background: var(--charcoal);
-  border-right: 1px solid var(--border);
+  background: #f5f5f7;
+  border-right: 1px solid #e5e5ea;
   padding: 1.5rem;
   display: flex; flex-direction: column; gap: 1rem;
   overflow-y: auto;
@@ -107,7 +107,7 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--charco
 .search-btn:disabled { background: var(--charcoal-light); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
 
 /* MAIN */
-.main { background: var(--charcoal); padding: 2rem; overflow-y: auto; }
+.main { background: #ffffff; padding: 2rem; overflow-y: auto; }
 
 .main-hero {
   background: linear-gradient(135deg, var(--burgundy-dark) 0%, #2d0a12 100%);
@@ -573,7 +573,7 @@ function renderProspects(prospects) {
         <div class="pcard priority-${p.priority}" id="pcard-${i}">
           <div class="pcard-top">
             <div>
-              <div class="pcard-name">${p.name}${p.nameAr ? ' <span style="color:#555;font-size:13px;">· '+p.nameAr+'</span>' : ''}</div>
+              <div class="pcard-name">${p.name}${p.nameAr ? ' <span style="color:#8e8e93;font-size:13px;">· '+p.nameAr+'</span>' : ''}</div>
               <div class="pcard-meta">
                 <span>📍 ${p.location}</span>
                 <span>🏭 ${p.sector}</span>
@@ -603,9 +603,9 @@ function renderProspects(prospects) {
             Why ${p.productType} + how to approach
           </button>
           <div class="product-reason" id="ereason-${i}">
-            <strong style="color:#e8e8e8;display:block;margin-bottom:6px;">Product fit</strong>
+            <strong style="color:#1c1c1e;display:block;margin-bottom:6px;">Product fit</strong>
             ${p.productReasoning}
-            <strong style="color:#e8e8e8;display:block;margin:10px 0 6px;">How to approach</strong>
+            <strong style="color:#1c1c1e;display:block;margin:10px 0 6px;">How to approach</strong>
             ${p.approachStrategy}
           </div>
 
